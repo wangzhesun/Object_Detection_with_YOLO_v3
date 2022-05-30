@@ -59,8 +59,10 @@ def create_modules(blocks):
         if block['type'] == 'convolutional':
             try:
                 batch = int(block['batch_normalize'])
+                bias = 0
             except:
                 batch = 0
+                bias = 1
             filters = int(block['filters'])
             kernel = int(block['size'])
             stride = int(block['stride'])
@@ -70,10 +72,8 @@ def create_modules(blocks):
 
             if pad:
                 padding_size = (kernel - 1) // 2
-                bias = 0
             else:
                 padding_size = 0
-                bias = 1
 
             conv = nn.Conv2d(prev_filters, filters, kernel, stride, padding_size, bias=bias)
             module.add_module('conv_{}'.format(index), conv)
@@ -199,14 +199,14 @@ class Darknet(nn.Module):
 
         return detection
 
-    def load_weight(self, weightfile):
+    def load_weights(self, weightfile):
         # Open the weights file
         fp = open(weightfile, "rb")
 
         # The first 5 values are header information
         # 1. Major version number
         # 2. Minor Version Number
-        # 3. Subversion number 
+        # 3. Subversion number
         # 4,5. Images seen by the network (during training)
         header = np.fromfile(fp, dtype=np.int32, count=5)
         self.header = torch.from_numpy(header)
@@ -220,7 +220,6 @@ class Darknet(nn.Module):
 
             # If module_type is convolutional load weights
             # Otherwise ignore.
-
             if module_type == "convolutional":
                 model = self.module_list[i]
                 try:
