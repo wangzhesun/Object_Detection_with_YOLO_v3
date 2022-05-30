@@ -164,18 +164,15 @@ draw = time.time()
 def write(x, results):
     c1 = tuple(x[1:3].int())
     c2 = tuple(x[3:5].int())
-    print(c1)
     img = results[int(x[0])]
     cls = int(x[-1])
     color = random.choice(colors)
     label = "{0}".format(classes[cls])
-    # cv.rectangle(img, c1, c2, color, 1)
 
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, 1)
 
     t_size = cv.getTextSize(label, cv.FONT_HERSHEY_PLAIN, 1, 1)[0]
-    c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
-    # cv.rectangle(img, c1, c2, color, -1)
+    c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4\
 
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
 
