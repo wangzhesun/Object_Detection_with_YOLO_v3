@@ -5,7 +5,6 @@ import numpy as np
 from util import util
 
 
-
 def parse_cfg(filename):
     file = open(filename, 'r')
     lines = file.read().split('\n')

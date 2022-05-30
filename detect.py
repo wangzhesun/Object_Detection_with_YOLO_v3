@@ -173,7 +173,7 @@ def write(x, results):
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, 1)
 
     t_size = cv.getTextSize(label, cv.FONT_HERSHEY_PLAIN, 1, 1)[0]
-    c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4\
+    c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
 
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
 
