@@ -1,15 +1,16 @@
 from __future__ import division
 
 import time
+import torch
 from torch.autograd import Variable
 import util
-from util import *
 import argparse
 import os
 import os.path as osp
 from network import Darknet
 import pickle as pkl
 import pandas as pd
+import cv2 as cv
 import random
 
 
@@ -48,7 +49,7 @@ nms_thresh = float(args.nms_thresh)
 start = 0
 
 num_classes = 80
-classes = load_classes("data/coco.names.txt")
+classes = util.load_classes("data/coco.names.txt")
 
 # Set up the neural network
 print("Loading network.....")
@@ -80,7 +81,7 @@ if not os.path.exists(args.det):
 load_batch = time.time()
 loaded_ims = [cv.imread('.' + x[69:]) for x in imlist]
 
-im_batches = list(map(prep_image, loaded_ims, [inp_dim for x in range(len(imlist))]))
+im_batches = list(map(util.prep_image, loaded_ims, [inp_dim for x in range(len(imlist))]))
 im_dim_list = [(x.shape[1], x.shape[0]) for x in loaded_ims]
 im_dim_list = torch.FloatTensor(im_dim_list).repeat(1, 2)
 
