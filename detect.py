@@ -32,7 +32,8 @@ def arg_parse():
     parser.add_argument("--confidence", dest="confidence",
                         help="Object Confidence to filter predictions", default=0.5)
     parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default=0.4)
-    parser.add_argument("--cfg", dest='cfgfile', help="Config file", default="cfg/yolov3.cfg", type=str)
+    parser.add_argument("--cfg", dest='cfgfile', help="Config file", default="cfg/yolov3.cfg",
+                        type=str)
     parser.add_argument("--weights", dest='weightsfile', help="weightsfile",
                         default="weights/yolov3.weights", type=str)
     parser.add_argument("--reso", dest='reso', help=
@@ -63,7 +64,6 @@ inp_dim = int(model.net_info["height"])
 assert inp_dim % 32 == 0
 assert inp_dim > 32
 
-
 # Set the model in evaluation mode
 model.eval()
 
@@ -82,8 +82,7 @@ if not os.path.exists(args.det):
     os.makedirs(args.det)
 
 load_batch = time.time()
-loaded_ims = [cv.imread('.'+x[69:]) for x in imlist]
-
+loaded_ims = [cv.imread('.' + x[69:]) for x in imlist]
 
 im_batches = list(map(prep_image, loaded_ims, [inp_dim for x in range(len(imlist))]))
 im_dim_list = [(x.shape[1], x.shape[0]) for x in loaded_ims]
@@ -100,7 +99,6 @@ if batch_size != 1:
                   range(num_batches)]
 
 write = 0
-
 
 start_det_loop = time.time()
 for i, batch in enumerate(im_batches):
@@ -177,7 +175,7 @@ def write(x, results):
     label = "{0}".format(classes[cls])
     # cv.rectangle(img, c1, c2, color, 1)
 
-    cv.rectangle(img, (int(c1[0]),int(c1[1])), (int(c2[0]),int(c2[1])), color, 1)
+    cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, 1)
 
     t_size = cv.getTextSize(label, cv.FONT_HERSHEY_PLAIN, 1, 1)[0]
     c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
@@ -185,9 +183,8 @@ def write(x, results):
 
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
 
-
     cv.putText(img, label, (int(c1[0]), int(c1[1] + t_size[1] + 4)), cv.FONT_HERSHEY_PLAIN, 1,
-                [225, 255, 255], 1)
+               [225, 255, 255], 1)
     return img
 
 
@@ -195,7 +192,6 @@ list(map(lambda x: write(x, loaded_ims), output))
 
 # det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("/")[-1]))
 det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("\\")[-1]))
-
 
 # print(det_names[0][69:])
 

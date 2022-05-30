@@ -114,7 +114,7 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
         pred_batch = prediction[index]
 
         # get max score and corresponding index
-        max_score, max_index = torch.max(pred_batch[:, 5:5+num_class], 1)
+        max_score, max_index = torch.max(pred_batch[:, 5:5 + num_class], 1)
         max_score = max_score.float().unsqueeze(1)
         max_index = max_index.float().unsqueeze(1)
         pred_batch = torch.cat((pred_batch[:, :5], max_score, max_index), 1)
@@ -166,7 +166,6 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
             #     # Remove the non-zero entries
             #     non_zero_ind = torch.nonzero(pred_batch_class[:, 4]).squeeze()
             #     pred_batch_class = pred_batch_class[non_zero_ind].view(-1, 7)
-
 
             # Repeat the batch_id for as many detections of the class cls in the image
             batch_ind = pred_batch_class.new(pred_batch_class.size(0), 1).fill_(index)

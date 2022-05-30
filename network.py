@@ -284,7 +284,6 @@ class Darknet(nn.Module):
                 conv_weights = conv_weights.view_as(conv.weight.data)
                 conv.weight.data.copy_(conv_weights)
 
-
 # blocks = parse_cfg('./cfg/yolov3.cfg')
 # net_info, modules = create_modules(blocks)
 # print(modules[106][0].anchors)
