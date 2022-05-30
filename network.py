@@ -1,11 +1,8 @@
-import torch
 import torch.nn as nn
 
 import util
 from util import *
 
-import cv2
-from torch.autograd import Variable
 
 
 def parse_cfg(filename):

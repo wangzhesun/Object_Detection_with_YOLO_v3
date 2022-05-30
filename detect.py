@@ -1,10 +1,7 @@
 from __future__ import division
+
 import time
-import torch
-import torch.nn as nn
 from torch.autograd import Variable
-import numpy as np
-import cv2 as cv
 import util
 from util import *
 import argparse
