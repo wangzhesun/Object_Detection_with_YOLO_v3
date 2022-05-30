@@ -18,7 +18,7 @@ import random
 
 def arg_parse():
     """
-    Parse arguements to the detect module
+    Parse arguments to the detect module
 
     """
 
@@ -47,7 +47,7 @@ args = arg_parse()
 images = args.images
 batch_size = int(args.bs)
 confidence = float(args.confidence)
-nms_thesh = float(args.nms_thresh)
+nms_thresh = float(args.nms_thresh)
 start = 0
 
 num_classes = 80
@@ -72,8 +72,7 @@ read_dir = time.time()
 try:
     imlist = [osp.join(osp.realpath('.'), images, img) for img in os.listdir(images)]
 except NotADirectoryError:
-    imlist = []
-    imlist.append(osp.join(osp.realpath('.'), images))
+    imlist = [osp.join(osp.realpath('.'), images)]
 except FileNotFoundError:
     print("No file or directory with the name {}".format(images))
     exit()
@@ -89,7 +88,7 @@ im_dim_list = [(x.shape[1], x.shape[0]) for x in loaded_ims]
 im_dim_list = torch.FloatTensor(im_dim_list).repeat(1, 2)
 
 leftover = 0
-if (len(im_dim_list) % batch_size):
+if len(im_dim_list) % batch_size:
     leftover = 1
 
 if batch_size != 1:
@@ -107,7 +106,7 @@ for i, batch in enumerate(im_batches):
     with torch.no_grad():
         prediction = model(Variable(batch))
 
-    prediction = util.write_results(prediction, confidence, nms_thesh, num_classes)
+    prediction = util.write_results(prediction, confidence, nms_thresh, num_classes)
 
     end = time.time()
 
@@ -190,16 +189,9 @@ def write(x, results):
 
 list(map(lambda x: write(x, loaded_ims), output))
 
-# det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("/")[-1]))
 det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("\\")[-1]))
 
-# print(det_names[0][69:])
-
-
-# loaded_ims = [cv.imread('.'+x[69:]) for x in imlist]
-
 list(map(cv.imwrite, det_names, loaded_ims))
-# list(map(cv.imwrite, '.', loaded_ims))
 
 end = time.time()
 
