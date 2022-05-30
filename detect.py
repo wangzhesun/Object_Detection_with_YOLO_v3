@@ -26,7 +26,7 @@ def arg_parse():
 
     parser.add_argument("--images", dest='images', help="Image / imgs",
                         default="imgs", type=str)
-    parser.add_argument("--det", dest='det', help="Image / results",
+    parser.add_argument("--det", dest='det', help="Image / det",
                         default="det", type=str)
     parser.add_argument("--bs", dest="bs", help="Batch size", default=1)
     parser.add_argument("--confidence", dest="confidence",
@@ -81,13 +81,7 @@ except FileNotFoundError:
 if not os.path.exists(args.det):
     os.makedirs(args.det)
 
-# a = cv.imread(imlist[0])
-# b = cv.imread('.\imgs\dog.jpg')
-# print(b)
-# print('.' + imlist[0][69:])
-
 load_batch = time.time()
-# loaded_ims = [cv.imread(x) for x in imlist]
 loaded_ims = [cv.imread('.'+x[69:]) for x in imlist]
 
 
@@ -176,24 +170,40 @@ draw = time.time()
 def write(x, results):
     c1 = tuple(x[1:3].int())
     c2 = tuple(x[3:5].int())
+    print(c1)
     img = results[int(x[0])]
     cls = int(x[-1])
     color = random.choice(colors)
     label = "{0}".format(classes[cls])
-    cv.rectangle(img, c1, c2, color, 1)
+    # cv.rectangle(img, c1, c2, color, 1)
+
+    cv.rectangle(img, (int(c1[0]),int(c1[1])), (int(c2[0]),int(c2[1])), color, 1)
+
     t_size = cv.getTextSize(label, cv.FONT_HERSHEY_PLAIN, 1, 1)[0]
     c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
-    cv.rectangle(img, c1, c2, color, -1)
-    cv.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv.FONT_HERSHEY_PLAIN, 1,
+    # cv.rectangle(img, c1, c2, color, -1)
+
+    cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
+
+
+    cv.putText(img, label, (int(c1[0]), int(c1[1] + t_size[1] + 4)), cv.FONT_HERSHEY_PLAIN, 1,
                 [225, 255, 255], 1)
     return img
 
 
 list(map(lambda x: write(x, loaded_ims), output))
 
-det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("/")[-1]))
+# det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("/")[-1]))
+det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det, x.split("\\")[-1]))
+
+
+# print(det_names[0][69:])
+
+
+# loaded_ims = [cv.imread('.'+x[69:]) for x in imlist]
 
 list(map(cv.imwrite, det_names, loaded_ims))
+# list(map(cv.imwrite, '.', loaded_ims))
 
 end = time.time()
 
@@ -209,5 +219,3 @@ print("{:25s}: {:2.3f}".format("Output Processing", class_load - output_recast))
 print("{:25s}: {:2.3f}".format("Drawing Boxes", end - draw))
 print("{:25s}: {:2.3f}".format("Average time_per_img", (end - load_batch) / len(imlist)))
 print("----------------------------------------------------------")
-
-torch.cuda.empty_cache()

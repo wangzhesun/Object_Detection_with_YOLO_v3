@@ -23,6 +23,7 @@ def transform_detection(prediction, input_dim, anchors, class_num):
     prediction[:, :, :2] = torch.sigmoid(prediction[:, :, :2])
     prediction[:, :, :2] = prediction[:, :, :2] + x_y_offset
 
+    anchors = [(a[0] / stride, a[1] / stride) for a in anchors]
     anchors = torch.FloatTensor(anchors)
     anchors = anchors.repeat(grid_size * grid_size, 1).unsqueeze(0)
     prediction[:, :, 2:4] = np.exp(prediction[:, :, 2:4]) * anchors
@@ -119,7 +120,7 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
         pred_batch = torch.cat((pred_batch[:, :5], max_score, max_index), 1)
 
         # get rid of zero confidence entry
-        nonzero_index = torch.nonzero(pred_batch[:, -2])
+        nonzero_index = torch.nonzero(pred_batch[:, 4])
 
         try:
             pred_batch_ = pred_batch[nonzero_index].view(-1, 7)
@@ -141,14 +142,35 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
             pred_batch_class = pred_batch_[class_mask_index].view(-1, 7)
 
             class_sort_index = torch.sort(pred_batch_class[:, 4], descending=True)[1]
-            prediction_class_sorted = pred_batch_class[class_sort_index]
+            pred_batch_class = pred_batch_class[class_sort_index]
 
             # perform nms to eliminate unnecessary ones
-            prediction_class_sorted = NMS(prediction_class_sorted, nms_thresh)
+            pred_batch_class = NMS(pred_batch_class, nms_thresh)
+
+            # idx = pred_batch_class.size(0)  # Number of detections
+            # for i in range(idx):
+            #     # Get the IOUs of all boxes that come after the one we are looking at
+            #     # in the loop
+            #     try:
+            #         ious = bbox_iou(pred_batch_class[i].unsqueeze(0), pred_batch_class[i + 1:])
+            #     except ValueError:
+            #         break
+            #
+            #     except IndexError:
+            #         break
+            #
+            #     # Zero out all the detections that have IoU > treshhold
+            #     iou_mask = (ious < nms_thresh).float().unsqueeze(1)
+            #     pred_batch_class[i + 1:] *= iou_mask
+            #
+            #     # Remove the non-zero entries
+            #     non_zero_ind = torch.nonzero(pred_batch_class[:, 4]).squeeze()
+            #     pred_batch_class = pred_batch_class[non_zero_ind].view(-1, 7)
+
 
             # Repeat the batch_id for as many detections of the class cls in the image
-            batch_ind = prediction_class_sorted.new(prediction_class_sorted.size(0), 1).fill_(index)
-            out = torch.cat((batch_ind, prediction_class_sorted), 1)
+            batch_ind = pred_batch_class.new(pred_batch_class.size(0), 1).fill_(index)
+            out = torch.cat((batch_ind, pred_batch_class), 1)
 
             if not write:
                 output = out
