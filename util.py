@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import cv2 as cv
 
 
 def transform_detection(prediction, input_dim, anchors, class_num):
@@ -94,7 +95,7 @@ def NMS(prediction, nms_th):
     return prediction
 
 
-def write_result(prediction, conf_thresh, nms_thresh, num_class):
+def write_results(prediction, conf_thresh, nms_thresh, num_class):
     batch_size = prediction.size(0)
     write = False
 
@@ -102,17 +103,17 @@ def write_result(prediction, conf_thresh, nms_thresh, num_class):
     prediction = prediction * conf_mask
 
     box_corner = prediction.new(prediction.shape)
-    box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
-    box_corner[:, :, 1] = prediction[:, :, 0] + prediction[:, :, 2] / 2
-    box_corner[:, :, 2] = prediction[:, :, 1] - prediction[:, :, 3] / 2
-    box_corner[:, :, 3] = prediction[:, :, 1] + prediction[:, :, 3] / 2
+    box_corner[:, :, 0] = (prediction[:, :, 0] - prediction[:, :, 2] / 2)
+    box_corner[:, :, 1] = (prediction[:, :, 1] - prediction[:, :, 3] / 2)
+    box_corner[:, :, 2] = (prediction[:, :, 0] + prediction[:, :, 2] / 2)
+    box_corner[:, :, 3] = (prediction[:, :, 1] + prediction[:, :, 3] / 2)
     prediction[:, :, :4] = box_corner[:, :, :4]
 
     for index in range(batch_size):
         pred_batch = prediction[index]
 
         # get max score and corresponding index
-        max_score, max_index = torch.max(prediction[:, 5:], 1)
+        max_score, max_index = torch.max(pred_batch[:, 5:5+num_class], 1)
         max_score = max_score.float().unsqueeze(1)
         max_index = max_index.float().unsqueeze(1)
         pred_batch = torch.cat((pred_batch[:, :5], max_score, max_index), 1)
@@ -159,3 +160,37 @@ def write_result(prediction, conf_thresh, nms_thresh, num_class):
         return output
     except:
         return 0
+
+
+def load_classes(namesfile):
+    fp = open(namesfile, "r")
+    names = fp.read().split("\n")[:-1]
+    return names
+
+
+def letterbox_image(img, inp_dim):
+    '''resize image with unchanged aspect ratio using padding'''
+    img_w, img_h = img.shape[1], img.shape[0]
+    w, h = inp_dim
+    new_w = int(img_w * min(w / img_w, h / img_h))
+    new_h = int(img_h * min(w / img_w, h / img_h))
+    resized_image = cv.resize(img, (new_w, new_h), interpolation=cv.INTER_CUBIC)
+
+    canvas = np.full((inp_dim[1], inp_dim[0], 3), 128)
+
+    canvas[(h - new_h) // 2:(h - new_h) // 2 + new_h, (w - new_w) // 2:(w - new_w) // 2 + new_w,
+    :] = resized_image
+
+    return canvas
+
+
+def prep_image(img, inp_dim):
+    """
+    Prepare image for inputting to the neural network.
+
+    Returns a Variable
+    """
+    img = (letterbox_image(img, (inp_dim, inp_dim)))
+    img = img[:, :, ::-1].transpose((2, 0, 1)).copy()
+    img = torch.from_numpy(img).float().div(255.0).unsqueeze(0)
+    return img
