@@ -3,7 +3,7 @@ from __future__ import division
 import time
 import torch
 from torch.autograd import Variable
-import util
+from util import util
 import argparse
 import os
 import os.path as osp

@@ -30,8 +30,8 @@ from multiprocessing.pool import ThreadPool
 import cv2 as cv
 import numpy as np
 
-import video_util
-import util
+from util import video_util
+from util import util
 from time import perf_counter, sleep
 
 
