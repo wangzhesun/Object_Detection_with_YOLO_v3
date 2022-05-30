@@ -60,12 +60,12 @@ def create_modules(blocks):
             except:
                 batch = 0
                 bias = 1
+
             filters = int(block['filters'])
             kernel = int(block['size'])
             stride = int(block['stride'])
             pad = int(block['pad'])
             activation = block['activation']
-            bias = -1
 
             if pad:
                 padding_size = (kernel - 1) // 2
@@ -90,7 +90,7 @@ def create_modules(blocks):
 
         elif block['type'] == 'upsample':
             scale = int(block['stride'])
-            upsample_layer = nn.Upsample(scale_factor=scale)
+            upsample_layer = nn.Upsample(scale_factor=scale, mode='nearest')
             module.add_module('upsample_{}'.format(index), upsample_layer)
 
         elif block['type'] == 'route':
@@ -123,7 +123,7 @@ def create_modules(blocks):
 
             anchors = block['anchors'].split(',')
             anchors = [int(item.lstrip().rstrip()) for item in anchors]
-            anchors = [(anchors[i], anchors[i + 1]) for i in range(int(len(anchors) / 2))]
+            anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
             anchors = [anchors[i] for i in mask]
 
             yolo_layer = DetectionLayer(anchors)
@@ -133,7 +133,7 @@ def create_modules(blocks):
         prev_filters = filters
         filter_list.append(filters)
 
-    return net_info, module_list
+    return (net_info, module_list)
 
 
 class Darknet(nn.Module):

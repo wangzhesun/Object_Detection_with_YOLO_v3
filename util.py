@@ -26,9 +26,11 @@ def transform_detection(prediction, input_dim, anchors, class_num):
     anchors = [(a[0] / stride, a[1] / stride) for a in anchors]
     anchors = torch.FloatTensor(anchors)
     anchors = anchors.repeat(grid_size * grid_size, 1).unsqueeze(0)
-    prediction[:, :, 2:4] = np.exp(prediction[:, :, 2:4]) * anchors
+    prediction[:, :, 2:4] = torch.exp(prediction[:, :, 2:4]) * anchors
 
-    prediction[:, :, 4:] = torch.sigmoid(prediction[:, :, 4:])
+    # prediction[:, :, 4:] = torch.sigmoid(prediction[:, :, 4:])
+    prediction[:, :, 4] = torch.sigmoid(prediction[:, :, 4])
+    prediction[:, :, 5: 5 + class_num] = torch.sigmoid(prediction[:, :, 5: 5 + class_num])
 
     prediction[:, :, :4] *= stride
 
@@ -123,7 +125,7 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
         nonzero_index = torch.nonzero(pred_batch[:, 4])
 
         try:
-            pred_batch_ = pred_batch[nonzero_index].view(-1, 7)
+            pred_batch_ = pred_batch[nonzero_index.squeeze(),:].view(-1, 7)
         except:
             continue
 
@@ -176,6 +178,15 @@ def write_results(prediction, conf_thresh, nms_thresh, num_class):
                 write = True
             else:
                 output = torch.cat((output, out), 0)
+
+            # seq = batch_ind, pred_batch_class
+            #
+            # if not write:
+            #     output = torch.cat(seq, 1)
+            #     write = True
+            # else:
+            #     out = torch.cat(seq, 1)
+            #     output = torch.cat((output, out))
 
     try:
         return output
