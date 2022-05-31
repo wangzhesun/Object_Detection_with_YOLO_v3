@@ -143,8 +143,6 @@ def detect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4):
 
     output_recast = time.time()
     class_load = time.time()
-    colors = pkl.load(open("pallete", "rb"))
-
     draw = time.time()
 
     # draw bounding boxes
@@ -190,4 +188,5 @@ if __name__ == '__main__':
     colors = pkl.load(open("pallete", "rb"))
 
     # run yolo v3 detection
+    # change the first parameter to the source path, the second to the destination path
     detect('./imgs', './det')
