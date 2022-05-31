@@ -6,7 +6,14 @@ from util import util
 
 
 def parse_cfg(filename):
+    """
+    parse configuration files into list of layer dictionary
+
+    :param filename: path of configuration file
+    :return: blocks containing layers
+    """
     file = open(filename, 'r')
+    # get each line of the file
     lines = file.read().split('\n')
 
     lines = [x for x in lines if len(x) > 0]
@@ -17,12 +24,13 @@ def parse_cfg(filename):
     block = {}
 
     for line in lines:
-        if line[0] == '[':
+        if line[0] == '[':  # deal with layer type information
             if len(block) > 0:
+                # append the block and reinitialize it in case it already contains information
                 blocks.append(block)
                 block = {}
             block['type'] = line[1:-1].lstrip().rstrip()
-        else:
+        else:   # deal with necessary parameters for the layer
             param, val = line.split('=')
             param = param.rstrip()
             val = val.lstrip()
@@ -44,12 +52,19 @@ class DetectionLayer(nn.Module):
 
 
 def create_modules(blocks):
+    """
+    create module list from the configuration block
+
+    :param blocks: list of layer dictionaries
+    :return: tuple of network information and module list
+    """
     module_list = nn.ModuleList()
     prev_filters = 3
     filter_list = []
 
     net_info = blocks[0]
 
+    # iterate the layer blocks from position 1
     for index, block in enumerate(blocks[1:]):
         module = nn.Sequential()
 
@@ -101,10 +116,11 @@ def create_modules(blocks):
 
             try:
                 end = layers[1]
-            except:
+            except: # in case only one parameter is provided for the route layer
                 end = 0
 
             if start > 0:
+                # calculate the relative position if absolute index is provided
                 start = start - index
             if end > 0:
                 end = end - index
@@ -129,7 +145,9 @@ def create_modules(blocks):
             yolo_layer = DetectionLayer(anchors)
             module.add_module('yolo_{}'.format(index), yolo_layer)
 
+        # append the new created module
         module_list.append(module)
+        # keep track of the filter size
         prev_filters = filters
         filter_list.append(filters)
 
@@ -137,6 +155,9 @@ def create_modules(blocks):
 
 
 class Darknet(nn.Module):
+    """
+    underlying network of yolo v3
+    """
     def __init__(self, cfgfile):
         super().__init__()
         self.blocks = parse_cfg(cfgfile)
@@ -167,8 +188,9 @@ class Darknet(nn.Module):
                     end = end - index
 
                 if end < 0:
+                    # concatenate two layers if two parameters are provided for route layer
                     x = torch.cat((output_list[index + start], output_list[index + end]), 1)
-                else:
+                else: # return the given layer if only one paramtere provided
                     x = output_list[index + start]
 
             elif block['type'] == 'shortcut':
@@ -176,6 +198,7 @@ class Darknet(nn.Module):
                 if shortcut_from > 0:
                     shortcut_from = shortcut_from - index
 
+                # add the given layer with current layer for shortcut layer
                 x = output_list[index - 1] + output_list[index + shortcut_from]
 
             elif block['type'] == 'yolo':
@@ -184,7 +207,8 @@ class Darknet(nn.Module):
                 class_num = int(block['classes'])
 
                 x = x.data
-                x = util.transform_detection(x, input_dim, anchors, class_num)
+                # transform the output of the network
+                x = util.transform_prediction(x, input_dim, anchors, class_num)
 
                 if not create:
                     detection = x
@@ -197,6 +221,11 @@ class Darknet(nn.Module):
         return detection
 
     def load_weights(self, weightfile):
+        """
+        load network using provided weights
+
+        :param weightfile: path to the weight file
+        """
         # Open the weights file
         fp = open(weightfile, "rb")
 
@@ -280,7 +309,3 @@ class Darknet(nn.Module):
 
                 conv_weights = conv_weights.view_as(conv.weight.data)
                 conv.weight.data.copy_(conv_weights)
-
-# blocks = parse_cfg('./cfg/yolov3.cfg')
-# net_info, modules = create_modules(blocks)
-# print(modules[106][0].anchors)
