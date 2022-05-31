@@ -151,7 +151,7 @@ def create_modules(blocks):
         prev_filters = filters
         filter_list.append(filters)
 
-    return (net_info, module_list)
+    return net_info, module_list
 
 
 class Darknet(nn.Module):
@@ -297,7 +297,7 @@ class Darknet(nn.Module):
                     # reshape the loaded weights according to the dims of the model weights
                     conv_biases = conv_biases.view_as(conv.bias.data)
 
-                    # Finally copy the data
+                    # Finally, copy the data
                     conv.bias.data.copy_(conv_biases)
 
                 # Let us load the weights for the Convolutional layers

@@ -39,7 +39,7 @@ def write_img(x, results):
     return img
 
 
-def detect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4):
+def YoloDetect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4):
     """
     run yolo v3 on the input images provided by src and output results to det
 
@@ -189,4 +189,4 @@ if __name__ == '__main__':
 
     # run yolo v3 detection
     # change the first parameter to the source path, the second to the destination path
-    detect('./imgs', './det')
+    YoloDetect('./imgs', './det')
