@@ -33,28 +33,49 @@ def write_img(x, results):
     c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
 
     cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
-
     cv.putText(img, label, (int(c1[0]), int(c1[1] + t_size[1] + 4)), cv.FONT_HERSHEY_PLAIN, 1,
                [225, 255, 255], 1)
     return img
 
 
-def YoloDetect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4):
+def write_vid(x, img):
     """
-    run yolo v3 on the input images provided by src and output results to det
+    draw bounding boxes and prediction class on video frames
 
-    :param src: path to the source images: will deal with all images if the path is a directory
-    :param det: destination path for output images
+    :param x: prediction output
+    :param img: original video
+    :return: video with prediction boxes
+    """
+    c1 = tuple(x[1:3].int())
+    c2 = tuple(x[3:5].int())
+    cls = int(x[-1])
+    label = "{0}".format(classes[cls])
+    color = random.choice(colors)
+    cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, 1)
+    t_size = cv.getTextSize(label, cv.FONT_HERSHEY_PLAIN, 1, 1)[0]
+    c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
+    cv.rectangle(img, (int(c1[0]), int(c1[1])), (int(c2[0]), int(c2[1])), color, -1)
+    cv.putText(img, label, (int(c1[0]), int(c1[1] + t_size[1] + 4)), cv.FONT_HERSHEY_PLAIN, 1,
+               [225, 255, 255], 1)
+    return img
+
+
+def detect_img(src, det, batch_size, confidence, nms_thresh):
+    """
+    helper function to detect object in images with yolo
+
+    :param src: path to the source images: process all images if the path is a directory
+    :param det: destination path for output images/videos
     :param batch_size: batch size, default = 1
     :param confidence: confidence threshold, default = 0.5
     :param nms_thresh: non-maximum suppression threshold, default = 0.4
     """
     read_dir = time.time()
-    try: # try if the src is a directory path
-        imlist = [src+'/'+img for img in os.listdir(src)]
-    except NotADirectoryError: # try file path if it is not a directory
+    try:  # try if the src is a directory path
+        imlist = [src + '/' + img for img in os.listdir(src)]
+    except NotADirectoryError:  # try file path if it is not a directory
         imlist = [src]
-    except FileNotFoundError: # invalid path if it is neither directory nor file
+    except FileNotFoundError:  # invalid path if it is neither directory nor file
         print("No file or directory with the name {}".format(src))
         exit()
 
@@ -170,6 +191,102 @@ def YoloDetect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4):
     print("----------------------------------------------------------")
 
 
+def detect_vid(src, det, confidence, nms_thresh):
+    """
+    helper function to detect object in videos with yolo
+
+    :param src: path to the source images: process all images if the path is a directory
+    :param det: destination path for output images/videos
+    :param confidence: confidence threshold, default = 0.5
+    :param nms_thresh: non-maximum suppression threshold, default = 0.4
+    """
+    cap = cv.VideoCapture(src)
+
+    assert cap.isOpened(), 'Cannot capture source'
+
+    # make the destination directory if not exist already
+    if not os.path.exists(det):
+        os.makedirs(det)
+
+    # set up output object
+    fourcc = cv.VideoWriter_fourcc(*'MJPG')
+    cols = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    rows = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+    output_vid_name = '{}/det_{}.avi'.format(det, src.split('/')[-1].split('.')[0])
+
+    out = cv.VideoWriter(output_vid_name, fourcc, 20.0, (cols, rows))
+
+    # Get frame count
+    n_frames = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+
+    frames = 0
+    start = time.time()
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if ret:
+            # prepare input video
+            img, orig_im, dim = util.prep_video(frame, inp_dim)
+
+            im_dim = torch.FloatTensor(dim).repeat(1, 2)
+
+            with torch.no_grad():
+                output = model(Variable(img))
+
+            output = util.write_results(output, confidence, nms_thresh, num_classes)
+
+            if type(output) == int:
+                frames += 1
+                print("FPS of the video is {:5.2f}".format(
+                    frames / (time.time() - start)) + "  frame: " + str(frames) + "/" + str(
+                    n_frames))
+
+                continue
+
+            im_dim = im_dim.repeat(output.size(0), 1)
+            scaling_factor = torch.min(inp_dim / im_dim, 1)[0].view(-1, 1)
+
+            output[:, [1, 3]] -= (inp_dim - scaling_factor * im_dim[:, 0].view(-1, 1)) / 2
+            output[:, [2, 4]] -= (inp_dim - scaling_factor * im_dim[:, 1].view(-1, 1)) / 2
+
+            output[:, 1:5] /= scaling_factor
+
+            for i in range(output.shape[0]):
+                output[i, [1, 3]] = torch.clamp(output[i, [1, 3]], 0.0, im_dim[i, 0])
+                output[i, [2, 4]] = torch.clamp(output[i, [2, 4]], 0.0, im_dim[i, 1])
+
+            list(map(lambda x: write_vid(x, orig_im), output))
+
+            # write output
+            out.write(orig_im)
+            frames += 1
+            print("FPS of the video is {:5.2f}".format(
+                frames / (time.time() - start)) + "  frame: " + str(frames) + "/" + str(
+                n_frames))
+        else:
+            break
+
+    out.release()
+
+
+def yolo_detect(src, det, batch_size=1, confidence=0.5, nms_thresh=0.4, img=1):
+    """
+    run yolo v3 on the input images/videos provided by src and output results to det
+
+    :param src: path to the source images/videos. In the case dealing with images, process all
+                images if the path is a directory
+    :param det: destination path for output images/videos
+    :param batch_size: batch size, default = 1
+    :param confidence: confidence threshold, default = 0.5
+    :param nms_thresh: non-maximum suppression threshold, default = 0.4
+    :param img: flag img = 1 indicates dealing with images; = 0 indicates dealing with videos
+    """
+    if img == 1:  # flag img == 1 indicates we're dealing with images
+        detect_img(src, det, batch_size, confidence, nms_thresh)
+    else:  # flag img == 0 indicates we're dealing with images
+        detect_vid(src, det, confidence, nms_thresh)
+
+
 if __name__ == '__main__':
     num_classes = 80
     classes = util.load_classes("data/coco.names.txt")
@@ -188,5 +305,7 @@ if __name__ == '__main__':
     colors = pkl.load(open("pallete", "rb"))
 
     # run yolo v3 detection
-    # change the first parameter to the source path, the second to the destination path
-    YoloDetect('./imgs', './det')
+    # change the first parameter to the source path, the second to the path of destination directory
+    # change flag img to 1 if dealing with images, change it to 0 if dealing with video
+    # yolo_detect('./imgs/beach.jpg', './det', img=1)
+    yolo_detect('./vids/test.mp4', './det', img=0)

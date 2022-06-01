@@ -236,7 +236,7 @@ def prep_image(img, inp_dim):
     """
     prepare image for inputting to the neural network using the letterbox_image function
 
-    :param img: the original image
+    :param img: the original user_provided image
     :param inp_dim: input dimension of the network
     :return: the network input image
     """
@@ -244,3 +244,19 @@ def prep_image(img, inp_dim):
     img = img[:, :, ::-1].transpose((2, 0, 1)).copy()
     img = torch.from_numpy(img).float().div(255.0).unsqueeze(0)
     return img
+
+
+def prep_video(vid, inp_dim):
+    """
+    prepare video for inputting to the neural network.
+
+    :param vid: the original user-provided video
+    :param inp_dim: input dimension of the network
+    :return: the network input video
+    """
+    orig_vid = vid
+    dim = orig_vid.shape[1], orig_vid.shape[0]
+    vid = (letterbox_image(orig_vid, (inp_dim, inp_dim)))
+    vid_ = vid[:, :, ::-1].transpose((2, 0, 1)).copy()
+    vid_ = torch.from_numpy(vid_).float().div(255.0).unsqueeze(0)
+    return vid_, orig_vid, dim
