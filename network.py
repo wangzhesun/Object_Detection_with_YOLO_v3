@@ -30,7 +30,7 @@ def parse_cfg(filename):
                 blocks.append(block)
                 block = {}
             block['type'] = line[1:-1].lstrip().rstrip()
-        else:   # deal with necessary parameters for the layer
+        else:  # deal with necessary parameters for the layer
             param, val = line.split('=')
             param = param.rstrip()
             val = val.lstrip()
@@ -116,7 +116,7 @@ def create_modules(blocks):
 
             try:
                 end = layers[1]
-            except: # in case only one parameter is provided for the route layer
+            except:  # in case only one parameter is provided for the route layer
                 end = 0
 
             if start > 0:
@@ -158,6 +158,7 @@ class Darknet(nn.Module):
     """
     underlying network of yolo v3
     """
+
     def __init__(self, cfgfile):
         super().__init__()
         self.blocks = parse_cfg(cfgfile)
@@ -190,7 +191,7 @@ class Darknet(nn.Module):
                 if end < 0:
                     # concatenate two layers if two parameters are provided for route layer
                     x = torch.cat((output_list[index + start], output_list[index + end]), 1)
-                else: # return the given layer if only one paramtere provided
+                else:  # return the given layer if only one paramtere provided
                     x = output_list[index + start]
 
             elif block['type'] == 'shortcut':
