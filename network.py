@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from util import util
+from utils import model_util as util
 
 
 def parse_cfg(filename):
