@@ -287,7 +287,7 @@ def detect_vid(model, src, det, confidence, nms_thresh, colors, classes, num_cla
 def yolo_detect(model, src, det, batch_size=1, confidence=0.5, nms_thresh=0.4, img=1, colors=None,
                 classes=None, num_classes=None, inp_dim=None):
     """
-    run yolo v3 on the input images/videos provided by src and output results to det
+    run yolo v3 on the input images/videos provided by src and output results to demo
 
     :param model: object detection model
     :param src: path to the source images/videos. In the case dealing with images, process all
