@@ -309,8 +309,8 @@ def yolo_detect(model, src, det, batch_size=1, confidence=0.5, nms_thresh=0.4, i
         detect_vid(model, src, det, confidence, nms_thresh, colors, classes, num_classes, inp_dim)
 
 
-def detect(input, output, img=1, num_classes=80, classes_path="data/coco.names.txt",
-           network_config="cfg/yolov3.cfg", weight_path="weights/yolov3.weights"):
+def detect(input, output, img=1, num_classes=80, classes_path="configurations/coco.names.txt",
+           network_config="configurations/yolov3.cfg", weight_path="weights/yolov3.weights"):
     """
     perform object detection
 
@@ -335,7 +335,7 @@ def detect(input, output, img=1, num_classes=80, classes_path="data/coco.names.t
     assert inp_dim % 32 == 0
     assert inp_dim > 32
 
-    colors = pkl.load(open("pallete", "rb"))
+    colors = pkl.load(open("configurations/pallete", "rb"))
 
     yolo_detect(model, input, output, img=img, colors=colors, classes=classes,
                 num_classes=num_classes, inp_dim=inp_dim)
